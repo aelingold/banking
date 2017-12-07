@@ -3,56 +3,50 @@ package org.olx.banking.service;
 import java.lang.invoke.MethodHandles;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 
 import org.olx.banking.api.TransactionDTO;
 import org.olx.banking.api.TransactionLogDTO;
+import org.olx.banking.api.TransactionTaxDTO;
 import org.olx.banking.exception.InsufficientFundException;
 import org.olx.banking.exception.InvalidAccountException;
-import org.olx.banking.model.Transaction;
+import org.olx.banking.model.AccountInMemory;
 import org.olx.banking.model.TransactionStatus;
-import org.olx.banking.repository.TransactionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
-public class TransactionService {
+public class TransactionInMemoryService {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-	private TransactionRepository transactionRepository;
 	private TransactionLogService transactionLogService;
 	private TransactionTaxService transactionTaxService;
-	private AccountService accountService;
+	private AccountInMemoryService accountInMemoryService;
 
 	@Autowired
-	public TransactionService(TransactionRepository transactionRepository, TransactionLogService transactionLogService,
-			AccountService accountService, TransactionTaxService transactionTaxService) {
+	public TransactionInMemoryService(TransactionLogService transactionLogService,
+			TransactionTaxService transactionTaxService, AccountInMemoryService accountInMemoryService) {
 		super();
-		this.transactionRepository = transactionRepository;
 		this.transactionLogService = transactionLogService;
-		this.accountService = accountService;
 		this.transactionTaxService = transactionTaxService;
+		this.accountInMemoryService = accountInMemoryService;
 	}
 
-	public Transaction process(TransactionDTO transactionDTO) {
+	public void process(TransactionDTO transactionDTO) {
 
 		LOGGER.info("persisting transaction {}", transactionDTO);
-
-		Transaction transaction;
+		
 		try {
-			transaction = buildTransaction(transactionDTO);
+			TransactionTaxDTO transaction = buildTransaction(transactionDTO);
 
 			BigDecimal originTax = transactionTaxService.calcularImpuesto(transaction);
-			transaction.setTaxAmount(originTax);
-			transaction = transactionRepository.save(transaction);
 
-			accountService.withdrawAndDeposit(transactionDTO, originTax);
+			accountInMemoryService.withdrawAndDeposit(transactionDTO, originTax);
 
 			TransactionLogDTO transactionLog = buildTransactionLog(transactionDTO, originTax);
 			transactionLogService.appendTransactionLog(transactionLog, TransactionStatus.OK);
-			return transaction;
+
 		} catch (InsufficientFundException e) {
 			TransactionLogDTO transactionLog = buildTransactionLog(transactionDTO, BigDecimal.ZERO);
 			transactionLogService.appendTransactionLog(transactionLog, TransactionStatus.INSUFFICIENT_FUNDS);
@@ -81,19 +75,22 @@ public class TransactionService {
 		return result;
 	}
 
-	private Transaction buildTransaction(TransactionDTO transactionDTO) {
-		Transaction transaction = new Transaction();
+	private TransactionTaxDTO buildTransaction(TransactionDTO transactionDTO) {
 
-		transaction.setDestinationAccount(accountService.getAccount(transactionDTO.getDestinationAccountId())
-				.orElseThrow(() -> new InvalidAccountException("destinactionAccountId not found")));
-		transaction.setOriginAccount(accountService.getAccount(transactionDTO.getOriginAccountId())
-				.orElseThrow(() -> new InvalidAccountException("originAccountId not found")));
+		AccountInMemory originAccount = accountInMemoryService.getAccount(transactionDTO.getDestinationAccountId())
+				.orElseThrow(() -> new InvalidAccountException("destinactionAccountId not found"));
+
+		AccountInMemory destinationAccount = accountInMemoryService.getAccount(transactionDTO.getOriginAccountId())
+				.orElseThrow(() -> new InvalidAccountException("originAccountId not found"));
+
+		TransactionTaxDTO transaction = new TransactionTaxDTO();
+
+		transaction.setDestinationBankName(destinationAccount.getBankName());
+		transaction.setDestinationCountry(destinationAccount.getOriginCountry());
+		transaction.setOriginBankName(originAccount.getBankName());
+		transaction.setOriginCountry(originAccount.getOriginCountry());
 		transaction.setTransferAmount(transactionDTO.getTransferAmount());
 
 		return transaction;
-	}
-
-	public List<Transaction> findAll() {
-		return transactionRepository.findAll();
 	}
 }

@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AccountController {
 
 	private AccountService accountService;
-	
+
 	@Autowired
 	public AccountController(AccountService accountService) {
 		super();
@@ -24,19 +24,19 @@ public class AccountController {
 	}
 
 	@GetMapping("api/account/{id}")
-	public Optional<AccountDTO> getAccount(@PathVariable Long id){
+	public Optional<AccountDTO> getAccount(@PathVariable Long id) {
 		Optional<Account> account = accountService.getAccount(id);
 		return Optional.of(account.map(x -> x.createFrom(x))).orElse(Optional.empty());
 	}
-	
+
 	@GetMapping("api/account-id/{id}")
-	public Optional<AccountDTO> getAccountId(@PathVariable String id){
+	public Optional<AccountDTO> getAccountId(@PathVariable String id) {
 		Optional<Account> account = accountService.getAccount(id);
 		return Optional.of(account.map(x -> x.createFrom(x))).orElse(Optional.empty());
-	}	
-	
+	}
+
 	@GetMapping("api/accounts")
-	public List<AccountDTO> getAll(){
+	public List<AccountDTO> getAll() {
 		return accountService.findAll().stream().map(x -> x.createFrom(x)).collect(Collectors.toList());
-	}	
+	}
 }

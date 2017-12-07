@@ -9,6 +9,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
+import javax.persistence.Version;
 
 import org.olx.banking.api.AccountDTO;
 
@@ -18,6 +19,8 @@ public class Account {
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	private Long id;
+	@Version
+	private Long version;
 	private String accountId;
 	private String bankName;
 	private String originCountry;
@@ -83,10 +86,18 @@ public class Account {
 		this.transactions = transactions;
 	}
 
+	public Long getVersion() {
+		return version;
+	}
+
+	public void setVersion(Long version) {
+		this.version = version;
+	}
+
 	@Override
 	public String toString() {
-		return "Account [id=" + id + ", accountId=" + accountId + ", bankName=" + bankName + ", originCountry="
-				+ originCountry + ", balance=" + balance + "]";
+		return "Account [id=" + id + ", version=" + version + ", accountId=" + accountId + ", bankName=" + bankName
+				+ ", originCountry=" + originCountry + ", balance=" + balance + "]";
 	}
 
 	@Override

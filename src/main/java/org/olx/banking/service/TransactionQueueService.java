@@ -22,9 +22,13 @@ public class TransactionQueueService {
 
 	@Autowired
 	private TransactionService transactionService;
+	@Autowired
+	private TransactionInMemoryService transactionInMemoryService;
 	@Resource
 	BlockingQueue<TransactionDTO> transactionQueue;
 	private ExecutorService executorService;
+	@Value("${use.inmemory.account.service}") 
+	private Boolean inMemoryAccountService;	
 
 	public Boolean queue(TransactionDTO transactionDTO) {
 		return transactionQueue.add(transactionDTO);
@@ -36,7 +40,7 @@ public class TransactionQueueService {
 		executorService = Executors.newFixedThreadPool(transactionConsumersQty);
 		
 		for (Integer i = 0; i < transactionConsumersQty; ++i) {
-			executorService.execute(new TransactionConsumer(transactionQueue, transactionService));
+			executorService.execute(new TransactionConsumer(transactionQueue, transactionService, transactionInMemoryService, inMemoryAccountService));
 		}
 	}
 

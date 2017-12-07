@@ -21,10 +21,10 @@ public class AccountService {
 		super();
 		this.accountRepository = accountRepository;
 	}
-	
-	public synchronized void withdrawAndDeposit(TransactionDTO transaction, BigDecimal originTax){
+
+	public synchronized void withdrawAndDeposit(TransactionDTO transaction, BigDecimal originTax) {
 		Account originAccount = getAccount(transaction.getOriginAccountId())
-		.orElseThrow(() -> new IllegalArgumentException("destinactionAccountId not found"));
+				.orElseThrow(() -> new IllegalArgumentException("originAccountId not found"));
 
 		BigDecimal originBalance = originAccount.getBalance().subtract(originTax)
 				.subtract(transaction.getTransferAmount());
@@ -32,25 +32,25 @@ public class AccountService {
 			throw new InsufficientFundException("balance due: " + originBalance);
 		}
 		originAccount.setBalance(originBalance);
-		accountRepository.save(originAccount);	
-		
+		accountRepository.save(originAccount);
+
 		Account destinationAccount = getAccount(transaction.getDestinationAccountId())
-		.orElseThrow(() -> new IllegalArgumentException("originAccountId not found"));
-		
+				.orElseThrow(() -> new IllegalArgumentException("destinationAccountId not found"));
+
 		destinationAccount.setBalance(destinationAccount.getBalance().add(transaction.getTransferAmount()));
-		accountRepository.save(destinationAccount);	
+		accountRepository.save(destinationAccount);
 		accountRepository.flush();
-	}	
-	
-	public Optional<Account> getAccount(Long id){
+	}
+
+	public Optional<Account> getAccount(Long id) {
 		return Optional.ofNullable(accountRepository.findOne(id));
 	}
-	
-	public Optional<Account> getAccount(String accountId){
+
+	public Optional<Account> getAccount(String accountId) {
 		return Optional.ofNullable(accountRepository.findByAccountId(accountId));
-	}	
-	
-	public List<Account> findAll(){
+	}
+
+	public List<Account> findAll() {
 		return accountRepository.findAll();
-	}	
+	}
 }
