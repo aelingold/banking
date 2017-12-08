@@ -9,6 +9,9 @@ import org.olx.banking.api.TransactionDTO;
 import org.olx.banking.api.TransactionLogDTO;
 import org.olx.banking.exception.InsufficientFundException;
 import org.olx.banking.exception.InvalidAccountException;
+import org.olx.banking.model.Account;
+import org.olx.banking.model.InternationalTransaction;
+import org.olx.banking.model.NationalTransaction;
 import org.olx.banking.model.Transaction;
 import org.olx.banking.model.TransactionStatus;
 import org.olx.banking.repository.TransactionRepository;
@@ -23,17 +26,15 @@ public class TransactionService {
 	private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 	private TransactionRepository transactionRepository;
 	private TransactionLogService transactionLogService;
-	private TransactionTaxService transactionTaxService;
 	private AccountService accountService;
 
 	@Autowired
 	public TransactionService(TransactionRepository transactionRepository, TransactionLogService transactionLogService,
-			AccountService accountService, TransactionTaxService transactionTaxService) {
+			AccountService accountService) {
 		super();
 		this.transactionRepository = transactionRepository;
 		this.transactionLogService = transactionLogService;
 		this.accountService = accountService;
-		this.transactionTaxService = transactionTaxService;
 	}
 
 	public Transaction process(TransactionDTO transactionDTO) {
@@ -44,7 +45,7 @@ public class TransactionService {
 		try {
 			transaction = buildTransaction(transactionDTO);
 
-			BigDecimal originTax = transactionTaxService.calcularImpuesto(transaction);
+			BigDecimal originTax = transaction.calcularImpuesto();
 			transaction.setTaxAmount(originTax);
 			transaction = transactionRepository.save(transaction);
 
@@ -82,12 +83,23 @@ public class TransactionService {
 	}
 
 	private Transaction buildTransaction(TransactionDTO transactionDTO) {
-		Transaction transaction = new Transaction();
+		
+		Account originAccount = accountService.getAccount(transactionDTO.getDestinationAccountId())
+		.orElseThrow(() -> new InvalidAccountException("destinactionAccountId not found"));
+		
+		Account destinationAccount = accountService.getAccount(transactionDTO.getOriginAccountId())
+		.orElseThrow(() -> new InvalidAccountException("originAccountId not found"));
+		
+		Transaction transaction = null;
+		
+		if (originAccount.getOriginCountry().equals(destinationAccount.getOriginCountry())){
+			transaction = new NationalTransaction();
+		}else{
+			transaction = new InternationalTransaction();
+		}
 
-		transaction.setDestinationAccount(accountService.getAccount(transactionDTO.getDestinationAccountId())
-				.orElseThrow(() -> new InvalidAccountException("destinactionAccountId not found")));
-		transaction.setOriginAccount(accountService.getAccount(transactionDTO.getOriginAccountId())
-				.orElseThrow(() -> new InvalidAccountException("originAccountId not found")));
+		transaction.setDestinationAccount(originAccount);
+		transaction.setOriginAccount(destinationAccount);
 		transaction.setTransferAmount(transactionDTO.getTransferAmount());
 
 		return transaction;

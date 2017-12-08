@@ -1,26 +1,39 @@
 package org.olx.banking.model;
 
+import java.lang.invoke.MethodHandles;
 import java.math.BigDecimal;
 
+import javax.persistence.DiscriminatorColumn;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.Inheritance;
+import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 
 import org.olx.banking.api.TransactionResponseDTO;
+import org.olx.banking.service.TaxService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Entity
-public class Transaction {
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "transaction_type")
+public abstract class Transaction implements TaxService{
 
+	protected final BigDecimal ONE_HUNDRED = new BigDecimal(100);
+	protected static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());	
+	
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	private Long id;
-	@ManyToOne
+	@ManyToOne(fetch=FetchType.EAGER)
 	@JoinColumn(name = "origin_account_id")
 	private Account originAccount;
-	@ManyToOne
+	@ManyToOne(fetch=FetchType.EAGER)
 	@JoinColumn(name = "destination_account_id")
 	private Account destinationAccount;
 	private BigDecimal transferAmount;
@@ -48,6 +61,10 @@ public class Transaction {
 
 		return result;
 	}
+	
+	protected BigDecimal percentage(BigDecimal base, BigDecimal pct) {
+		return base.multiply(pct).divide(ONE_HUNDRED);
+	}	
 
 	public Long getId() {
 		return id;

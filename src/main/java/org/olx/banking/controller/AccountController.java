@@ -23,14 +23,8 @@ public class AccountController {
 		this.accountService = accountService;
 	}
 
-	@GetMapping("api/account/{id}")
-	public Optional<AccountDTO> getAccount(@PathVariable Long id) {
-		Optional<Account> account = accountService.getAccount(id);
-		return Optional.of(account.map(x -> x.createFrom(x))).orElse(Optional.empty());
-	}
-
-	@GetMapping("api/account-id/{id}")
-	public Optional<AccountDTO> getAccountId(@PathVariable String id) {
+	@GetMapping("api/accounts/{id}")
+	public Optional<AccountDTO> getAccount(@PathVariable String id) {
 		Optional<Account> account = accountService.getAccount(id);
 		return Optional.of(account.map(x -> x.createFrom(x))).orElse(Optional.empty());
 	}

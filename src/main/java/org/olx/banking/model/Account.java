@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -25,7 +26,7 @@ public class Account {
 	private String bankName;
 	private String originCountry;
 	private BigDecimal balance;
-	@OneToMany(mappedBy="originAccount")
+	@OneToMany(mappedBy="originAccount", fetch=FetchType.EAGER)
 	private List<Transaction> transactions;
 
 	public AccountDTO createFrom(Account account) {

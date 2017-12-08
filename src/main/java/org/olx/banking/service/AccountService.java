@@ -42,10 +42,6 @@ public class AccountService {
 		accountRepository.flush();
 	}
 
-	public Optional<Account> getAccount(Long id) {
-		return Optional.ofNullable(accountRepository.findOne(id));
-	}
-
 	public Optional<Account> getAccount(String accountId) {
 		return Optional.ofNullable(accountRepository.findByAccountId(accountId));
 	}
