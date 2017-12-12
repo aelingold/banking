@@ -15,14 +15,13 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 
 import org.olx.banking.api.TransactionResponseDTO;
-import org.olx.banking.service.TaxService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Entity
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "transaction_type")
-public abstract class Transaction implements TaxService{
+public abstract class Transaction {
 
 	protected final BigDecimal ONE_HUNDRED = new BigDecimal(100);
 	protected static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());	
@@ -50,6 +49,8 @@ public abstract class Transaction implements TaxService{
 		this.destinationAccount = destinationAccount;
 		this.transferAmount = transferAmount;
 	}
+	
+	public abstract BigDecimal calcularImpuesto();
 
 	public TransactionResponseDTO createFrom(Transaction transaction) {
 		TransactionResponseDTO result = new TransactionResponseDTO();
